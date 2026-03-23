@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CallLens</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cream:#FDF8F3; --warm:#FFFCF8; --sand:#F5EDE0; --sand-d:#E8D9C5;
+  --terra:#C4622D; --terra-l:#F2E4D8; --terra-p:#FBF0E9;
+  --sage:#5A7A5F; --sage-l:#E4EFE5;
+  --amber:#B8770D; --amber-l:#FDF0D5;
+  --slate:#4A5568; --slate-l:#E8EDF5;
+  --plum:#6B4C7A; --plum-l:#EDE5F2;
+  --ocean:#2E6E8E; --ocean-l:#DFF0F7;
+  --text:#2D2418; --text-m:#6B5744; --text-mu:#9E8A78;
+  --border:#E8D9C5; --bsoft:#F0E6D8; --sh:rgba(100,60,20,.07);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;font-family:'Nunito',sans-serif;background:var(--cream);color:var(--text);font-size:13px}
+
+/* HEADER */
+.hdr{height:46px;background:var(--warm);border-bottom:1.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 1.1rem;flex-shrink:0;z-index:50}
+.hdr-l{display:flex;align-items:center;gap:8px}
+.logo{width:26px;height:26px;border-radius:7px;background:var(--terra);display:flex;align-items:center;justify-content:center}
+.logo svg{width:13px;height:13px}
+.hdr h1{font-size:14px;font-weight:800;letter-spacing:-.3px}
+.hdr h1 span{color:var(--terra)}
+.hdr-r{display:flex;gap:6px;align-items:center}
+.btn{display:inline-flex;align-items:center;gap:5px;font-family:'Nunito',sans-serif;font-size:11px;font-weight:700;padding:5px 10px;border-radius:7px;cursor:pointer;border:none;transition:all .15s}
+.btn-o{background:transparent;border:1.5px solid var(--border);color:var(--text-m)}
+.btn-o:hover{background:var(--sand)}
+.btn-p{background:var(--terra);color:#fff}
+.btn-p:hover{background:#B0561F}
+.btn-warn{background:var(--amber-l);border:1.5px solid #e8c97a;color:var(--amber);font-size:10px;padding:3px 9px}
+.btn-warn:hover{background:#fae8b0}
+
+/* UPLOAD SCREEN */
+#upload-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:calc(100vh - 46px);padding:1rem;gap:10px}
+.up-tabs{display:flex;gap:0;border:1.5px solid var(--border);border-radius:9px;overflow:hidden;background:var(--sand)}
+.up-tab{padding:6px 16px;font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;cursor:pointer;background:transparent;border:none;color:var(--text-mu);transition:all .15s}
+.up-tab.active{background:var(--warm);color:var(--terra)}
+.up-panel{background:var(--warm);border:1.5px solid var(--border);border-radius:14px;padding:1.5rem 1.75rem;width:100%;max-width:440px;text-align:center}
+.up-panel h2{font-size:16px;font-weight:800;margin-bottom:5px}
+.up-panel p{font-size:12px;color:var(--text-mu);line-height:1.6;margin-bottom:1rem}
+.drop-zone{border:2px dashed var(--sand-d);border-radius:10px;padding:1.25rem 1rem;cursor:pointer;transition:all .2s;margin-bottom:8px}
+.drop-zone:hover,.drop-zone.drag{border-color:var(--terra);background:var(--terra-p)}
+.drop-icon{width:42px;height:42px;border-radius:12px;background:var(--terra-l);display:flex;align-items:center;justify-content:center;margin:0 auto 8px}
+.drop-zone p{font-size:12px;color:var(--text-mu);margin:3px 0 0}
+.paste-area{width:100%;height:140px;border:1.5px solid var(--border);border-radius:9px;padding:9px 11px;font-family:'Nunito',sans-serif;font-size:11px;color:var(--text);background:var(--sand);resize:none;outline:none;transition:border .15s;margin-bottom:8px}
+.paste-area:focus{border-color:var(--terra);background:var(--warm)}
+.paste-area::placeholder{color:var(--text-mu)}
+.divider{display:flex;align-items:center;gap:10px;color:var(--text-mu);font-size:11px;margin:6px 0}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.sample-btn{width:100%;background:var(--sand);border:1.5px solid var(--sand-d);color:var(--text-m);font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;padding:6px;border-radius:7px;cursor:pointer;transition:all .15s}
+.sample-btn:hover{background:var(--sand-d)}
+
+/* MAIN LAYOUT — full viewport, no overflow */
+#main-screen{display:none;height:calc(100vh - 46px);flex-direction:column;overflow:hidden}
+#main-screen.show{display:flex}
+
+/* inner scrollable area */
+.inner{flex:1;min-height:0;display:flex;flex-direction:column;gap:.4rem;padding:.55rem .85rem .4rem;overflow:hidden}
+
+/* ROWS */
+.row{display:flex;gap:.4rem;flex-shrink:0}
+.row.grow{flex:1;min-height:0}
+
+/* CARDS */
+.card{background:var(--warm);border:1.5px solid var(--bsoft);border-radius:11px;padding:.45rem .65rem;box-shadow:0 1px 3px var(--sh);display:flex;flex-direction:column;overflow:hidden}
+.card.f1{flex:1;min-width:0}
+.ch{display:flex;align-items:center;justify-content:space-between;gap:5px;margin-bottom:.3rem;padding-bottom:.28rem;border-bottom:1px solid var(--bsoft);flex-shrink:0}
+.chip{font-size:9.5px;font-weight:800;padding:2px 7px;border-radius:20px;letter-spacing:.02em;white-space:nowrap}
+.chip-t{background:var(--terra-l);color:var(--terra)}
+.chip-s{background:var(--sage-l);color:var(--sage)}
+.chip-a{background:var(--amber-l);color:var(--amber)}
+.chip-sl{background:var(--slate-l);color:var(--slate)}
+.chip-p{background:var(--plum-l);color:var(--plum)}
+.chip-o{background:var(--ocean-l);color:var(--ocean)}
+
+/* FIELDS */
+.fr{display:flex;justify-content:space-between;align-items:flex-start;gap:6px;padding:2px 0;border-bottom:1px solid var(--bsoft)}
+.fr:last-child{border-bottom:none}
+.fl{font-size:9.5px;color:var(--text-mu);font-weight:600;flex-shrink:0;padding-top:1px;line-height:1.4}
+.fv{font-size:10.5px;color:var(--text);font-weight:700;text-align:right;max-width:63%;word-break:break-word;line-height:1.4}
+.fv.na{color:var(--text-mu);font-weight:400;font-style:italic}
+
+/* PILLS */
+.pill{display:inline-block;font-size:9.5px;font-weight:800;padding:1px 6px;border-radius:20px}
+.py{background:var(--sage-l);color:var(--sage)}
+.pn{background:#FCE8E8;color:#9B3030}
+.pna{background:var(--sand);color:var(--text-mu)}
+
+/* TAGS */
+.tag{display:inline-block;font-size:9.5px;font-weight:600;padding:1px 5px;border-radius:7px;background:var(--sand);color:var(--text-m);border:1px solid var(--sand-d);margin:1px}
+
+/* STEPS */
+.steps{background:var(--sand);border-radius:6px;padding:5px 7px;font-size:10.5px;color:var(--text);line-height:1.6;font-weight:500;flex:1}
+.steps.empty{color:var(--text-mu);font-style:italic;font-weight:400}
+
+/* PRODUCT TABS */
+.prod-tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:.35rem;flex-shrink:0}
+.ptab{font-family:'Nunito',sans-serif;font-size:9.5px;font-weight:700;padding:2px 9px;border-radius:20px;border:1.5px solid var(--border);background:var(--sand);color:var(--text-m);cursor:pointer;transition:all .15s;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ptab:hover{border-color:var(--terra);color:var(--terra)}
+.ptab.active{background:var(--terra-l);color:var(--terra);border-color:var(--terra)}
+
+/* PRODUCT DETAIL */
+.pgrid{display:flex;gap:.4rem;flex:1;min-height:0}
+.pleft{display:flex;flex-direction:column;gap:.4rem;flex:1;min-width:0;overflow-y:auto}
+.pright{flex:1.4;min-width:0;display:flex;flex-direction:column}
+.pright .card{flex:1}
+
+/* SPECS TABLE */
+.stbl-wrap{flex:1;overflow-y:auto;border-radius:5px;border:1px solid var(--bsoft)}
+.stbl{width:100%;border-collapse:collapse;font-size:9.5px}
+.stbl th{text-align:left;padding:3px 5px;background:var(--sand);color:var(--text-mu);font-weight:700;font-size:8.5px;text-transform:uppercase;letter-spacing:.04em;position:sticky;top:0;z-index:1}
+.stbl td{padding:3px 5px;border-bottom:1px solid var(--bsoft);color:var(--text);font-weight:600}
+.stbl tr:last-child td{border-bottom:none}
+
+/* PII DRAWER */
+.pii-bar{background:var(--warm);border-top:1.5px solid var(--border);padding:.3rem .85rem;display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap}
+.pii-section{display:none;flex-wrap:wrap;gap:.35rem;width:100%;padding-top:.3rem}
+.pii-section.open{display:flex}
+.pii-card{background:var(--sand);border:1px solid var(--sand-d);border-radius:9px;padding:.35rem .6rem;font-size:10px;min-width:150px}
+.pii-card strong{font-size:9px;font-weight:800;color:var(--text-mu);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:2px}
+.pii-row{display:flex;justify-content:space-between;gap:8px;padding:1px 0}
+.pii-lbl{font-size:9.5px;color:var(--text-mu);font-weight:600}
+.pii-val{font-size:9.5px;font-weight:700;color:var(--text)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.ani{animation:fadeUp .2s ease both}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-l">
+    <div class="logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 8.81a19.79 19.79 0 01-3.07-8.69A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
+    </div>
+    <h1>Call<span>Lens</span></h1>
+  </div>
+  <div class="hdr-r">
+    <label class="btn btn-o">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Upload JSON
+      <input type="file" accept=".json" id="hdr-file" style="display:none">
+    </label>
+    <button class="btn btn-o" id="hdr-paste-btn">Paste JSON</button>
+    <button class="btn btn-p" id="hdr-demo">Load sample</button>
+  </div>
+</header>
+
+<!-- UPLOAD SCREEN -->
+<div id="upload-screen">
+  <div class="up-tabs">
+    <button class="up-tab active" data-tab="file">Upload file</button>
+    <button class="up-tab" data-tab="paste">Paste JSON</button>
+  </div>
+  <div class="up-panel" id="panel-file">
+    <div class="drop-zone" id="drop-zone">
+      <div class="drop-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C4622D" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="12" x2="12" y2="18"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+      </div>
+      <p style="font-size:13px;font-weight:700;color:var(--text)">Drop your JSON here</p>
+      <p>or click to browse files</p>
+      <input type="file" accept=".json" id="drop-file" style="display:none">
+    </div>
+    <div class="divider">or</div>
+    <button class="sample-btn" id="demo-btn">✨ Load sample call data</button>
+  </div>
+  <div class="up-panel" id="panel-paste" style="display:none">
+    <h2>Paste your JSON</h2>
+    <p>Copy your call analysis JSON and paste it below</p>
+    <textarea class="paste-area" id="paste-input" placeholder='{ "buyer_details": { ... }, "products": [...], ... }'></textarea>
+    <button class="btn btn-p" id="paste-load-btn" style="width:100%;justify-content:center;font-size:12px;padding:8px">Parse &amp; View</button>
+    <div class="divider">or</div>
+    <button class="sample-btn" id="demo-btn-2">✨ Load sample call data</button>
+  </div>
+</div>
+
+<!-- MAIN SCREEN -->
+<div id="main-screen">
+  <div class="inner">
+
+    <!-- ROW 1: Metadata · Evidence · Buyer steps · Seller steps · Payment -->
+    <div class="row ani">
+      <div class="card f1">
+        <div class="ch"><span class="chip chip-sl">🧠 Metadata</span></div>
+        <div id="meta-fields"></div>
+      </div>
+      <div class="card f1">
+        <div class="ch"><span class="chip chip-p">🔍 Evidence</span></div>
+        <div id="ev-fields"></div>
+      </div>
+      <div class="card f1" style="display:flex;flex-direction:column">
+        <div class="ch"><span class="chip chip-o">📋 Buyer next steps</span></div>
+        <div id="buyer-steps" class="steps"></div>
+      </div>
+      <div class="card f1" style="display:flex;flex-direction:column">
+        <div class="ch"><span class="chip chip-p">📋 Seller next steps</span></div>
+        <div id="seller-steps" class="steps"></div>
+      </div>
+      <div class="card f1">
+        <div class="ch"><span class="chip chip-a">💳 Payment &amp; MOQ</span></div>
+        <div id="pay-fields"></div>
+      </div>
+    </div>
+
+    <!-- ROW 2: Products — grows to fill remaining space -->
+    <div class="row grow ani">
+      <div class="card f1">
+        <div class="ch"><span class="chip chip-s" id="prod-chip">📦 Products</span></div>
+        <div class="prod-tabs" id="prod-tabs"></div>
+        <div class="pgrid" id="prod-detail"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- PII DRAWER -->
+  <div class="pii-bar">
+    <button class="btn btn-warn" id="pii-toggle">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+      <span id="pii-label">Show contact details</span>
+    </button>
+    <span style="font-size:9.5px;color:var(--text-mu)">Buyer &amp; seller personal info hidden by default</span>
+    <div class="pii-section" id="pii-section">
+      <div class="pii-card" id="pii-buyer"></div>
+      <div class="pii-card" id="pii-seller"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SAMPLE = {"buyer_details":{"buyer_name":"Meraj","buyer_mobile_number":7977924800,"buyer_location":{"buyer_city":"Mumbai"}},"seller_details":{"seller_name":"Piyush","seller_location":{"seller_city":"Mumbai","seller_locality":"Malad East"}},"products":[{"product_name":"1.9kg Aluminum Track for Invisible Grill (Invisibile Grill Track)","in_stock":"in stock","is_buyer_interested":false,"most_specific_category":{"name":"Invisible Grill","reason":"The buyer specifically asks for aluminum track used for invisible grills, which is a primary component of the invisible grill system."},"related_categories":[{"name":"Aluminum Grills","reason":"The track is made of aluminum material as discussed by both parties."},{"name":"Grill Accessories","reason":"The track serves as a mounting accessory/component for installing the invisible grill system."}],"price":{"value":950,"currency":"INR","price_unit":"piece"},"specifications":[{"name":"Material","value":"Aluminum","buyer_requested":true,"seller_mentioned":true},{"name":"Weight","value":"1.9","unit":"kg","buyer_requested":false,"seller_mentioned":true},{"name":"Length","value":"10","unit":"feet","buyer_requested":true,"seller_mentioned":true}]},{"product_name":"0.6kg Aluminum Track (Track)","in_stock":"not sold","is_buyer_interested":true,"most_specific_category":{"name":"Invisible Grill","reason":"The buyer refers to this as a component for the invisible grill system though the seller doesn't stock this specific lightweight variation."},"related_categories":[{"name":"Aluminum Grills","reason":"Buyer specified an aluminum material requirement."}],"specifications":[{"name":"Material","value":"Aluminum","buyer_requested":true,"seller_mentioned":false},{"name":"Weight","value":"0.6","unit":"kg","buyer_requested":true,"seller_mentioned":false},{"name":"Length","value":"10","unit":"feet","buyer_requested":true,"seller_mentioned":false}]}],"next_steps":{"buyer_next_steps":["To consider the 1.9kg track option provided by the seller"],"seller_next_steps":[]},"metadata":{"primary_language":"Hindi","all_languages":["Hindi","English"],"call_type":{"evidence":{"buyer_persona":"distributor","quantity_scale":"High","order_type":"bulk","repeat_buyer":false,"keywords":["500 to 600 tracks","aluminum track","invisible grill"]},"reason":"The buyer is inquiring about a high quantity (500-600 pieces) of industrial components for resale or large-scale installation, characteristic of B2B transactions.","type":"B2B"},"call_purpose":"requirement"}};
+
+let DATA=null,AT=0,PII=false;
+
+const g=v=>(v===null||v===undefined||v==='')?null:v;
+
+function fr(lbl,val){
+  if(typeof val==='boolean') return `<div class="fr"><span class="fl">${lbl}</span><span class="pill ${val?'py':'pn'}">${val?'Yes':'No'}</span></div>`;
+  const n=val===null||val===undefined||val==='';
+  return `<div class="fr"><span class="fl">${lbl}</span><span class="fv${n?' na':''}">${n?'—':val}</span></div>`;
+}
+const stockPill=v=>{
+  if(!v) return '<span class="pill pna">—</span>';
+  const s=String(v).toLowerCase();
+  return `<span class="pill ${(s==='in stock'||s==='true')?'py':'pn'}">${v}</span>`;
+};
+const boolPill=v=>{
+  if(v===null||v===undefined) return '<span class="pill pna">—</span>';
+  return `<span class="pill ${v?'py':'pn'}">${v?'Yes':'No'}</span>`;
+};
+const tags=arr=>{
+  if(!arr||!arr.length) return '<span style="color:var(--text-mu);font-style:italic;font-size:10px">—</span>';
+  return arr.map(t=>`<span class="tag">${t}</span>`).join('');
+};
+const stepsHTML=arr=>{
+  if(!arr||(Array.isArray(arr)&&!arr.length)||arr==='') return '';
+  const items=Array.isArray(arr)?arr:[arr];
+  return items.map(s=>`• ${s}`).join('<br>');
+};
+
+function renderProduct(p){
+  if(!p) return '';
+  const specs=Array.isArray(p.specifications)?p.specifications:[];
+  const rc=Array.isArray(p.related_categories)?p.related_categories:[];
+  const msc=p.most_specific_category||{};
+  const pr=p.price||{};
+  const priceStr=pr.value!==undefined?`${pr.value} ${pr.currency||''} / ${pr.price_unit||''}`.trim():null;
+  const gstStr=pr.gst?(pr.gst.value!==undefined?pr.gst.value+'%'+(pr.gst.is_gst_included!==undefined?(pr.gst.is_gst_included?' incl.':' excl.'):''):null):null;
+  const delivStr=pr.delivery_charge?(pr.delivery_charge.details||(pr.delivery_charge.is_delivery_charge_included!==undefined?(pr.delivery_charge.is_delivery_charge_included?'Included':'Not included'):null)):null;
+
+  return `
+  <div class="pleft">
+    <div class="card" style="flex-shrink:0">
+      <div class="ch"><span class="chip chip-t">Overview</span></div>
+      <div class="fr"><span class="fl">In stock</span>${stockPill(p.in_stock)}</div>
+      <div class="fr"><span class="fl">Buyer interested</span>${boolPill(p.is_buyer_interested)}</div>
+      ${fr('Category',g(msc.name))}
+      <div class="fr" style="align-items:flex-start"><span class="fl">Cat. reason</span><span class="fv" style="font-size:9.5px;font-weight:500;line-height:1.4">${g(msc.reason)||'—'}</span></div>
+      ${rc.length?rc.map(c=>`<div class="fr" style="align-items:flex-start"><span class="fl">${c.name}</span><span class="fv" style="font-size:9.5px;font-weight:500;line-height:1.4">${c.reason||'—'}</span></div>`).join(''):''}
+    </div>
+    <div class="card" style="flex-shrink:0">
+      <div class="ch"><span class="chip chip-a">Pricing</span></div>
+      ${fr('Price',priceStr)}${fr('GST',gstStr)}${fr('GST details',g(pr.gst?.details))}${fr('Delivery',delivStr)}${fr('Offer',g(pr.offer_details))}
+    </div>
+  </div>
+  <div class="pright">
+    <div class="card" style="flex:1;display:flex;flex-direction:column">
+      <div class="ch" style="flex-shrink:0"><span class="chip chip-s">Specifications</span></div>
+      ${specs.length?`<div class="stbl-wrap"><table class="stbl"><thead><tr><th>Name</th><th>Value</th><th>Unit</th><th>Buyer req.</th><th>Seller ment.</th></tr></thead><tbody>${specs.map(s=>`<tr><td>${s.name||'—'}</td><td>${s.value||'—'}</td><td>${s.unit||'—'}</td><td>${boolPill(s.buyer_requested)}</td><td>${boolPill(s.seller_mentioned)}</td></tr>`).join('')}</tbody></table></div>`:'<p style="font-size:10px;color:var(--text-mu);font-style:italic">No specifications listed</p>'}
+    </div>
+  </div>`;
+}
+
+function render(){
+  const d=DATA;
+  const bd=d.buyer_details||{},bl=bd.buyer_location||{};
+  const sd=d.seller_details||{},sl=sd.seller_location||{};
+  const prods=Array.isArray(d.products)?d.products:[];
+  const ns=d.next_steps||{};
+  const meta=d.metadata||{},ct=meta.call_type||{},ev=ct.evidence||{};
+  const pay=d.payment||{},moq=d.minimum_order_quantity||{};
+
+  document.getElementById('meta-fields').innerHTML=
+    fr('Language',g(meta.primary_language))+
+    fr('All languages',Array.isArray(meta.all_languages)?meta.all_languages.join(', '):g(meta.all_languages))+
+    fr('Call purpose',g(meta.call_purpose))+
+    fr('Call type',g(ct.type))+
+    `<div class="fr" style="align-items:flex-start"><span class="fl">Reason</span><span class="fv" style="font-size:9.5px;font-weight:500;line-height:1.4">${g(ct.reason)||'—'}</span></div>`;
+
+  document.getElementById('ev-fields').innerHTML=
+    fr('Buyer persona',g(ev.buyer_persona))+
+    fr('Qty scale',g(ev.quantity_scale))+
+    fr('Order type',g(ev.order_type))+
+    `<div class="fr"><span class="fl">Repeat buyer</span>${boolPill(ev.repeat_buyer)}</div>`+
+    `<div class="fr" style="flex-direction:column;align-items:flex-start;gap:2px"><span class="fl">Keywords</span><div style="margin-top:2px">${tags(ev.keywords)}</div></div>`;
+
+  const bsteps=document.getElementById('buyer-steps');
+  const bhtml=stepsHTML(ns.buyer_next_steps);
+  bsteps.innerHTML=bhtml||'<span style="color:var(--text-mu);font-style:italic">No steps noted</span>';
+  bsteps.className='steps'+(bhtml?'':' empty');
+
+  const ssteps=document.getElementById('seller-steps');
+  const shtml=stepsHTML(ns.seller_next_steps);
+  ssteps.innerHTML=shtml||'<span style="color:var(--text-mu);font-style:italic">No steps noted</span>';
+  ssteps.className='steps'+(shtml?'':' empty');
+
+  const moqStr=moq.value!==undefined?`${moq.value} ${moq.unit||''}`:null;
+  document.getElementById('pay-fields').innerHTML=
+    fr('Mode',g(pay.payment_mode))+fr('Details',g(pay.payment_details))+fr('Terms',g(pay.payment))+fr('Min order qty',moqStr);
+
+  document.getElementById('prod-chip').textContent=`📦 Products (${prods.length})`;
+  const tabs=document.getElementById('prod-tabs');
+  tabs.innerHTML=prods.map((p,i)=>`<button class="ptab${i===AT?' active':''}" data-i="${i}" title="${p.product_name||'Product '+(i+1)}">${p.product_name||'Product '+(i+1)}</button>`).join('');
+  document.getElementById('prod-detail').innerHTML=renderProduct(prods[AT]);
+  tabs.onclick=e=>{
+    const b=e.target.closest('[data-i]');if(!b)return;
+    AT=parseInt(b.dataset.i);
+    document.querySelectorAll('.ptab').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    document.getElementById('prod-detail').innerHTML=renderProduct(prods[AT]);
+  };
+
+  // PII
+  document.getElementById('pii-buyer').innerHTML=`<strong>🧑 Buyer</strong>
+    ${['Name','Mobile','City','State','Locality'].map((l,i)=>{
+      const vals=[g(bd.buyer_name),g(bd.buyer_mobile_number),g(bl.buyer_city),g(bl.buyer_state),g(bl.buyer_locality)];
+      return `<div class="pii-row"><span class="pii-lbl">${l}</span><span class="pii-val">${vals[i]||'—'}</span></div>`;
+    }).join('')}`;
+  document.getElementById('pii-seller').innerHTML=`<strong>🏪 Seller</strong>
+    ${['Name','Mobile','City','State','Locality'].map((l,i)=>{
+      const vals=[g(sd.seller_name),g(sd.seller_mobile_number),g(sl.seller_city),g(sl.seller_state),g(sl.seller_locality)];
+      return `<div class="pii-row"><span class="pii-lbl">${l}</span><span class="pii-val">${vals[i]||'—'}</span></div>`;
+    }).join('')}`;
+
+  document.getElementById('upload-screen').style.display='none';
+  document.getElementById('main-screen').classList.add('show');
+}
+
+function load(json){
+  try{
+    DATA=typeof json==='string'?JSON.parse(json):json;
+    AT=0;PII=false;
+    document.getElementById('pii-section').classList.remove('open');
+    document.getElementById('pii-label').textContent='Show contact details';
+    render();
+  }catch(e){alert('Invalid JSON:\n'+e.message);}
+}
+
+function readFile(f){if(!f)return;const r=new FileReader();r.onload=ev=>load(ev.target.result);r.readAsText(f);}
+
+// tab switching
+document.querySelectorAll('.up-tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.up-tab').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  const tab=t.dataset.tab;
+  document.getElementById('panel-file').style.display=tab==='file'?'':'none';
+  document.getElementById('panel-paste').style.display=tab==='paste'?'':'none';
+}));
+
+// drop zone
+const dz=document.getElementById('drop-zone');
+dz.addEventListener('click',()=>document.getElementById('drop-file').click());
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag');readFile(e.dataTransfer.files[0]);});
+document.getElementById('drop-file').addEventListener('change',e=>readFile(e.target.files[0]));
+document.getElementById('hdr-file').addEventListener('change',e=>readFile(e.target.files[0]));
+
+// paste
+document.getElementById('paste-load-btn').addEventListener('click',()=>{
+  const v=document.getElementById('paste-input').value.trim();
+  if(!v)return alert('Please paste JSON first');
+  load(v);
+});
+
+// sample
+['demo-btn','demo-btn-2','hdr-demo'].forEach(id=>document.getElementById(id).addEventListener('click',()=>load(SAMPLE)));
+
+// header paste btn — shows upload screen on paste tab
+document.getElementById('hdr-paste-btn').addEventListener('click',()=>{
+  document.getElementById('main-screen').classList.remove('show');
+  document.getElementById('upload-screen').style.display='flex';
+  document.querySelectorAll('.up-tab').forEach(x=>x.classList.remove('active'));
+  document.querySelector('[data-tab="paste"]').classList.add('active');
+  document.getElementById('panel-file').style.display='none';
+  document.getElementById('panel-paste').style.display='';
+});
+
+// PII toggle
+document.getElementById('pii-toggle').addEventListener('click',()=>{
+  PII=!PII;
+  document.getElementById('pii-section').classList.toggle('open',PII);
+  document.getElementById('pii-label').textContent=PII?'Hide contact details':'Show contact details';
+});
+</script>
+</body>
+</html>
